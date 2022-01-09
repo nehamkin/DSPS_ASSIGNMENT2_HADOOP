@@ -14,22 +14,44 @@ import java.io.IOException;
  */
 public class Step3 {
 
+    private static String STEP3_OUTPUT="/step3output/";
+
     private static class Map extends Mapper<LongWritable, Text, Text, Text> {
 
         @Override
         public void map (LongWritable key, Text value, Context context)  throws IOException, InterruptedException {
+            // the value should be <w1 w2 ?w3  /t count>
             String[] strings = value.toString().split("\t");
             String[] words = strings[0].split(" ");
+
             if(words.length>2){
+
                 String w1 = words[0];
                 String w2 = words[1];
                 String w3= words[2];
-                int occur = Integer.parseInt(strings[2]);
-                Text text = new Text();
-                text.set(String.format("%s %s %s",w1,w2,w3));
-                Text text1 = new Text();
-                text1.set(String.format("%d",occur));
-                context.write(text ,text1);
+
+                String all3 = String.format("%s %s %s",w1,w2,w3);
+
+                int count = Integer.parseInt(strings[2]);
+
+                Text newKey = new Text();
+                newKey.set(all3);
+                Text newVal = new Text();
+                newVal.set(String.format("%d",count));
+                context.write(newKey ,newVal);
+
+//
+//                Text textFirst2 = new Text();
+//                textTotal.set(String.format("%s %s %s",w1,w2,"#first2"));
+//                Text value2 = new Text();
+//                value2.set(String.format("%s    %d",all3, count));
+//                context.write(textTotal ,value2);
+//
+//                Text textSecond2 = new Text();
+//                textTotal.set(String.format("%s %s %s",w2,w3,"#second2"));
+//                Text value3 = new Text();
+//                value3.set(String.format("%s    %d",all3, count));
+//                context.write(textTotal ,value3);
             }
         }
     }
@@ -62,11 +84,9 @@ public class Step3 {
         job.setOutputValueClass(Text.class);
         job.setOutputFormatClass(TextOutputFormat.class);
         job.setInputFormatClass(SequenceFileInputFormat.class);
-        String output="/output3/";
         SequenceFileInputFormat.addInputPath(job, new Path("s3n://datasets.elasticmapreduce/ngrams/books/20090715/heb-all/3gram/data"));
-        FileOutputFormat.setOutputPath(job, new Path("s3://orrisoutputbucket3gram/output"));
+        FileOutputFormat.setOutputPath(job, new Path(STEP3_OUTPUT));
         job.waitForCompletion(true);
-
     }
 
 }

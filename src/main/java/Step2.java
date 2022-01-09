@@ -9,6 +9,10 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import java.io.IOException;
 
 public class Step2 {
+
+    private static String STEP2_OUTPUT="/step2output/";
+
+
     private static class Map extends Mapper<LongWritable, Text, Text, Text> {
 
         @Override
@@ -19,11 +23,11 @@ public class Step2 {
                 String w1 = words[0];
                 String w2 = words[1];
                 int occur = Integer.parseInt(strings[2]);
-                Text text = new Text();
-                text.set(String.format("%s %s",w1,w2));
-                Text text1 = new Text();
-                text1.set(String.format("%d",occur));
-                context.write(text ,text1);
+                Text newKey = new Text();
+                newKey.set(String.format("%s %s",w1,w2));
+                Text newVal = new Text();
+                newVal.set(String.format("%d",occur));
+                context.write(newKey ,newVal);
             }
         }
     }
@@ -32,14 +36,14 @@ public class Step2 {
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             String oldKey=key.toString();
-            int sum_occ = 0;
+            int sum = 0;
             for (Text val : values) {
-                sum_occ += Long.parseLong(val.toString());
+                sum += Long.parseLong(val.toString());
             }
             Text newKey = new Text();
             newKey.set(String.format("%s",oldKey));
             Text newVal = new Text();
-            newVal.set(String.format("%d",sum_occ));
+            newVal.set(String.format("%d",sum));
             context.write(newKey, newVal);
         }
     }
@@ -55,9 +59,8 @@ public class Step2 {
         job.setOutputValueClass(Text.class);
         job.setOutputFormatClass(TextOutputFormat.class);
         job.setInputFormatClass(SequenceFileInputFormat.class);
-        String output="/output2/";
         SequenceFileInputFormat.addInputPath(job, new Path("s3n://datasets.elasticmapreduce/ngrams/books/20090715/heb-all/2gram/data"));
-        FileOutputFormat.setOutputPath(job, new Path("s3://orrisoutputbucket2gram/output"));
+        FileOutputFormat.setOutputPath(job, new Path(STEP2_OUTPUT));
         job.waitForCompletion(true);
 
 
